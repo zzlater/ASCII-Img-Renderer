@@ -1,0 +1,236 @@
+# Tasks
+
+Status values: `Not started`, `In progress`, `Needs review`, `Needs repair`, `Complete`.
+
+Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders set `Needs review`. When updating this file, also update `docs/PROJECT_STATE.md`'s "Current Active Task".
+
+---
+
+## Phase 0 — Repository / Application Setup
+
+### T0.1 — Initialize Vite + React + TypeScript project
+**Status:** Not started
+**Objective:** Scaffold the app with `npm create vite@latest . -- --template react-ts` (or equivalent), producing a running dev server.
+**Files/modules:** `package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`, `src/main.tsx`, `src/App.tsx`.
+**Acceptance criteria:** `npm run dev` serves a blank/default app; `npm run build` succeeds; repo has a `.gitignore` covering `node_modules`/`dist`.
+**Required validation:** `npm install`, `npm run build`.
+
+### T0.2 — Configure ESLint, Prettier, and TypeScript strict mode
+**Status:** Not started
+**Objective:** Add lint config (TypeScript + React rules) and enable `strict: true` in `tsconfig.json`.
+**Files/modules:** `.eslintrc*` or `eslint.config.*`, `.prettierrc*`, `tsconfig.json`.
+**Acceptance criteria:** `npm run lint` runs clean on the scaffold; strict mode enabled with no suppressed errors.
+**Required validation:** `npm run lint`, `npm run typecheck` (or `tsc --noEmit`).
+
+### T0.3 — Set up Vitest
+**Status:** Not started
+**Objective:** Add Vitest (+ React Testing Library if component tests are anticipated) and one smoke test.
+**Files/modules:** `vite.config.ts` (test block) or `vitest.config.ts`, `package.json` scripts, one `*.test.ts` smoke test.
+**Acceptance criteria:** `npm test` runs and passes the smoke test.
+**Required validation:** `npm test`.
+
+### T0.4 — Establish base folder structure
+**Status:** Not started
+**Objective:** Create the empty directory structure proposed in `docs/ARCHITECTURE.md` (`src/sources`, `src/renderer`, `src/processing`, `src/export`, `src/components`, `src/hooks`, `src/state`, `src/diagnostics`) with a placeholder or `index.ts` where needed so the structure survives Git.
+**Files/modules:** `src/**`.
+**Acceptance criteria:** Structure matches `docs/ARCHITECTURE.md`; build still passes.
+**Required validation:** `npm run build`.
+
+### T0.5 — Document real dev commands in CLAUDE.md
+**Status:** Not started
+**Objective:** Once `package.json` scripts exist (T0.1–T0.3), replace the placeholder command block in `CLAUDE.md` with the actual scripts.
+**Files/modules:** `CLAUDE.md`.
+**Acceptance criteria:** Commands listed in `CLAUDE.md` match `package.json` `scripts` exactly.
+**Required validation:** Manual diff of `CLAUDE.md` against `package.json`.
+
+---
+
+## Phase 1 — Renderer Core and Pure Utilities
+
+### T1.1 — Define the Renderer interface
+**Status:** Not started
+**Objective:** Implement `src/renderer/types.ts` with the `Renderer`/`RenderSettings` shapes from `docs/ARCHITECTURE.md`.
+**Files/modules:** `src/renderer/types.ts`.
+**Acceptance criteria:** Interface compiles; documented with the fields needed for color/mono, char ramp, font metrics.
+**Required validation:** `npm run typecheck`.
+
+### T1.2 — Pure image-processing utilities: luminance and adjustments
+**Status:** Not started
+**Objective:** Implement `src/processing/luminance.ts` and `src/processing/adjustments.ts` (brightness/contrast/gamma/invert) as pure functions on pixel data.
+**Files/modules:** `src/processing/luminance.ts`, `src/processing/adjustments.ts`, matching `*.test.ts`.
+**Acceptance criteria:** No DOM/Canvas/React imports in these files; documented input/output ranges.
+**Required validation:** `npm test`, `npm run typecheck`.
+
+### T1.3 — Character ramp mapping utility
+**Status:** Not started
+**Objective:** Implement `src/processing/char-ramp.ts`: luminance → character lookup, at least one built-in preset ramp, and support for a custom user-supplied ramp string.
+**Files/modules:** `src/processing/char-ramp.ts`, `*.test.ts`.
+**Acceptance criteria:** Pure function(s); handles empty/invalid custom ramp input without throwing.
+**Required validation:** `npm test`.
+
+### T1.4 — Grid/sampling math
+**Status:** Not started
+**Objective:** Implement `src/renderer/grid.ts`: given output width, source aspect ratio, and font-cell aspect ratio, compute grid columns/rows (DEC-010).
+**Files/modules:** `src/renderer/grid.ts`, `*.test.ts`.
+**Acceptance criteria:** Pure function; covered by unit tests for at least landscape, portrait, and square source aspect ratios.
+**Required validation:** `npm test`.
+
+### T1.5 — Canvas 2D renderer implementation
+**Status:** Not started
+**Objective:** Implement `src/renderer/canvas2d-renderer.ts` implementing `Renderer` from T1.1, composing T1.2–T1.4 to sample a `CanvasImageSource` and draw characters to an output canvas.
+**Files/modules:** `src/renderer/canvas2d-renderer.ts`.
+**Acceptance criteria:** Implements the full `Renderer` interface; no direct DOM manipulation outside the target canvas passed in; disposes cleanly.
+**Required validation:** `npm run typecheck`, `npm test` (any testable sub-logic extracted to pure functions), manual smoke check once T2.x wires it to UI.
+
+---
+
+## Phase 2 — Image Input and Static Rendering
+
+### T2.1 — Image upload input source
+**Status:** Not started
+**Objective:** Implement `src/sources/image-source.ts`: accept a file via `<input type="file">`, decode to `ImageBitmap`/`HTMLImageElement`, expose a minimal `FrameSource` interface.
+**Files/modules:** `src/sources/image-source.ts`, `src/sources/types.ts`.
+**Acceptance criteria:** Handles common formats (PNG/JPEG/WebP); releases any object URL created.
+**Required validation:** `npm run typecheck`, manual test with a sample image.
+
+### T2.2 — Wire static image through renderer to canvas output
+**Status:** Not started
+**Objective:** Connect T2.1's source through the Canvas2D renderer (T1.5) to an on-screen `<canvas>`, one static render on image load.
+**Files/modules:** `src/hooks/` (new hook), `src/components/` (output canvas host).
+**Acceptance criteria:** Uploading an image renders ASCII output on screen at default settings.
+**Required validation:** `npm run build`, manual browser check.
+
+### T2.3 — Basic layout: upload panel + output canvas
+**Status:** Not started
+**Objective:** Minimal `App.tsx` layout: upload control on one side, output canvas on the other. No styling polish required yet.
+**Files/modules:** `src/App.tsx`, `src/components/`.
+**Acceptance criteria:** Usable end-to-end path: pick image file → see ASCII output.
+**Required validation:** Manual browser check.
+
+---
+
+## Phase 3 — Controls and Visual Customization
+
+### T3.1 — Character preset / custom ramp control
+**Status:** Not started
+**Objective:** UI control to pick a built-in preset ramp or enter a custom ramp string, wired to T1.3 and settings state.
+**Files/modules:** `src/components/`, `src/state/`.
+**Acceptance criteria:** Changing the ramp updates rendered output; invalid custom input doesn't crash the app.
+**Required validation:** Manual browser check.
+
+### T3.2 — Font control
+**Status:** Not started
+**Objective:** Font family/size control that updates the cell aspect ratio used by T1.4's grid math.
+**Files/modules:** `src/components/`, `src/state/`, `src/renderer/grid.ts` (consumer wiring only).
+**Acceptance criteria:** Changing font updates grid dimensions and visual output correctly (no distortion).
+**Required validation:** Manual browser check across at least 2 fonts.
+
+### T3.3 — Brightness / contrast / gamma / invert controls
+**Status:** Not started
+**Objective:** UI sliders/toggle wired to T1.2's pure adjustment functions via settings state.
+**Files/modules:** `src/components/`, `src/state/`.
+**Acceptance criteria:** Each control visibly affects output independently; values stay within documented valid ranges.
+**Required validation:** Manual browser check.
+
+### T3.4 — Color / monochrome mode toggle
+**Status:** Not started
+**Objective:** Toggle between color and monochrome rendering (DEC-006), wired into the renderer's `RenderSettings`.
+**Files/modules:** `src/components/`, `src/renderer/canvas2d-renderer.ts` (consumer of existing interface, no interface change if avoidable).
+**Acceptance criteria:** Both modes render correctly; switching doesn't require reloading the source.
+**Required validation:** Manual browser check.
+
+### T3.5 — Output width / grid size control
+**Status:** Not started
+**Objective:** UI control for output width (characters), driving T1.4's grid math (DEC-010).
+**Files/modules:** `src/components/`, `src/state/`.
+**Acceptance criteria:** Height always derives correctly from width + aspect ratios; no manual height input exposed.
+**Required validation:** Manual browser check at low/medium/high width values.
+
+---
+
+## Phase 4 — Video / Webcam / Screen-Share Lifecycle
+
+### T4.1 — Video file input source
+**Status:** Not started
+**Objective:** Implement `src/sources/video-source.ts`: load a video file into an `HTMLVideoElement`, handle play/pause, expose current-frame access.
+**Files/modules:** `src/sources/video-source.ts`.
+**Acceptance criteria:** Cleans up (`src = ''`, listeners removed) on unmount or source change.
+**Required validation:** `npm run typecheck`, manual test with a sample video file.
+
+### T4.2 — rAF-based render loop decoupled from React state
+**Status:** Not started
+**Objective:** Implement the live render loop (hook in `src/hooks/`) that calls the renderer every frame via `requestAnimationFrame` and refs only — per DEC-011, no `setState` in the per-frame path.
+**Files/modules:** `src/hooks/` (new render-loop hook).
+**Acceptance criteria:** Verified (by code inspection and a reviewer pass) that no component re-render is triggered per frame; loop starts/stops cleanly with source lifecycle.
+**Required validation:** `npm run typecheck`, manual browser check with a playing video, reviewer sign-off on the no-setState-per-frame requirement.
+
+### T4.3 — Webcam input source
+**Status:** Not started
+**Objective:** Implement `src/sources/webcam-source.ts` using `getUserMedia`; handle permission denial and device-not-found errors; stop all tracks on cleanup.
+**Files/modules:** `src/sources/webcam-source.ts`.
+**Acceptance criteria:** Permission errors surface as a user-visible message, not a silent failure or unhandled rejection; all tracks stopped on unmount/source switch.
+**Required validation:** Manual browser check (grant + deny permission paths).
+
+### T4.4 — Screen-share input source
+**Status:** Not started
+**Objective:** Implement `src/sources/screen-share-source.ts` using `getDisplayMedia`; handle the user ending the share from the browser's own UI (track `ended` event), not just component unmount.
+**Files/modules:** `src/sources/screen-share-source.ts`.
+**Acceptance criteria:** Ending the share from the browser chrome (not the app) is detected and the app returns to a clean idle state.
+**Required validation:** Manual browser check, including ending the share externally.
+
+### T4.5 — FPS control / render loop throttle
+**Status:** Not started
+**Objective:** User-facing FPS control that throttles T4.2's render loop without reintroducing per-frame `setState`.
+**Files/modules:** `src/hooks/` (render-loop hook), `src/components/`, `src/state/`.
+**Acceptance criteria:** Loop respects the configured target FPS; changing FPS live doesn't restart the source.
+**Required validation:** Manual browser check with diagnostics overlay (T5.2) once available, or console-timed check before then.
+
+---
+
+## Phase 5 — PNG Export and Diagnostics
+
+### T5.1 — PNG export of current frame
+**Status:** Not started
+**Objective:** Implement `src/export/png-export.ts`: serialize the current output canvas to a downloadable PNG.
+**Files/modules:** `src/export/png-export.ts`, `src/components/` (export button).
+**Acceptance criteria:** Works for both static (image) and live (video/webcam/screen-share) sources; downloaded file opens as a valid PNG.
+**Required validation:** Manual browser check, inspect the downloaded file.
+
+### T5.2 — Performance diagnostics overlay
+**Status:** Not started
+**Objective:** Implement `src/diagnostics/` — fps, frame time, current grid size — updating on a throttled interval, not per frame (consistent with DEC-011).
+**Files/modules:** `src/diagnostics/`, `src/components/`.
+**Acceptance criteria:** Overlay updates without causing the per-frame render path to trigger React state updates; measured FPS is reasonably accurate against a manual stopwatch check.
+**Required validation:** Manual browser check against the 30 FPS / moderate grid size target (DEC-008).
+
+---
+
+## Phase 6 — Testing, Responsive UI, Accessibility, Final Documentation
+
+### T6.1 — Unit test coverage pass for pure utilities
+**Status:** Not started
+**Objective:** Ensure `src/processing/` and `src/renderer/grid.ts` have meaningful coverage of edge cases (empty ramp, zero-size source, extreme aspect ratios).
+**Files/modules:** `src/processing/*.test.ts`, `src/renderer/grid.test.ts`.
+**Acceptance criteria:** Edge cases from acceptance criteria of T1.2–T1.4 are all covered.
+**Required validation:** `npm test`.
+
+### T6.2 — Responsive layout pass
+**Status:** Not started
+**Objective:** Ensure the control panel and output canvas remain usable at common viewport widths (mobile/tablet/desktop).
+**Files/modules:** `src/components/`, CSS.
+**Acceptance criteria:** No horizontal overflow or unusable controls at 375px/768px/1440px widths.
+**Required validation:** Manual browser check at each width.
+
+### T6.3 — Accessibility pass
+**Status:** Not started
+**Objective:** Labels for all controls, keyboard operability, sufficient contrast, and appropriate ARIA for permission-error states (T4.3).
+**Files/modules:** `src/components/`.
+**Acceptance criteria:** All interactive controls reachable and operable via keyboard; form controls have associated labels.
+**Required validation:** Manual keyboard-only pass; automated check (e.g. axe) if available by this phase.
+
+### T6.4 — Final documentation pass
+**Status:** Not started
+**Objective:** Add a top-level `README.md` (setup + usage) and reconcile `docs/ARCHITECTURE.md` with whatever the actual structure became.
+**Files/modules:** `README.md`, `docs/ARCHITECTURE.md`.
+**Acceptance criteria:** A new contributor can go from clone to running app using only `README.md`; `docs/ARCHITECTURE.md` matches `src/` reality.
+**Required validation:** Manual doc-vs-code diff by the verifier.
