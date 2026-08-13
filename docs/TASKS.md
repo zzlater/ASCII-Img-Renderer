@@ -9,35 +9,38 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 ## Phase 0 — Repository / Application Setup
 
 ### T0.1 — Initialize Vite + React + TypeScript project
-**Status:** Not started
+**Status:** Complete
 **Objective:** Scaffold the app with `npm create vite@latest . -- --template react-ts` (or equivalent), producing a running dev server.
 **Files/modules:** `package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`, `src/main.tsx`, `src/App.tsx`.
 **Acceptance criteria:** `npm run dev` serves a blank/default app; `npm run build` succeeds; repo has a `.gitignore` covering `node_modules`/`dist`.
 **Required validation:** `npm install`, `npm run build`.
+**Notes:** The Vite CLI generator refuses to run non-interactively in a non-empty directory (this repo already had docs/.claude/.git), so the scaffold was hand-written to match current `create-vite` output (project-references tsconfig, flat ESLint config). `typescript` pinned to `~6.0.3` — `typescript-eslint@8.x`'s peer range excludes the registry's `latest` (7.0.2).
 
 ### T0.2 — Configure ESLint, Prettier, and TypeScript strict mode
-**Status:** Not started
+**Status:** Complete
 **Objective:** Add lint config (TypeScript + React rules) and enable `strict: true` in `tsconfig.json`.
 **Files/modules:** `.eslintrc*` or `eslint.config.*`, `.prettierrc*`, `tsconfig.json`.
 **Acceptance criteria:** `npm run lint` runs clean on the scaffold; strict mode enabled with no suppressed errors.
 **Required validation:** `npm run lint`, `npm run typecheck` (or `tsc --noEmit`).
+**Notes:** `eslint-plugin-react-hooks` flat-config export lives at `reactHooks.configs.flat['recommended-latest']`, not the top-level key — reviewer confirmed this is load-bearing, not cosmetic. Nice-to-have from review: `eslint.config.js` sets `ecmaVersion: 2020` vs. tsconfig's `target: "ES2022"` — harmless, bump next time this file is touched.
 
 ### T0.3 — Set up Vitest
-**Status:** Not started
+**Status:** Complete
 **Objective:** Add Vitest (+ React Testing Library if component tests are anticipated) and one smoke test.
 **Files/modules:** `vite.config.ts` (test block) or `vitest.config.ts`, `package.json` scripts, one `*.test.ts` smoke test.
 **Acceptance criteria:** `npm test` runs and passes the smoke test.
 **Required validation:** `npm test`.
+**Notes:** Used a throwaway pure-function smoke test (`src/sum.ts`/`src/sum.test.ts`) instead of a React Testing Library render test, so jsdom/RTL weren't added before they're actually needed. **Delete `src/sum.ts`/`src/sum.test.ts` as part of T1.2**, once real pure-function tests exist under `src/processing/`.
 
 ### T0.4 — Establish base folder structure
-**Status:** Not started
+**Status:** Complete
 **Objective:** Create the empty directory structure proposed in `docs/ARCHITECTURE.md` (`src/sources`, `src/renderer`, `src/processing`, `src/export`, `src/components`, `src/hooks`, `src/state`, `src/diagnostics`) with a placeholder or `index.ts` where needed so the structure survives Git.
 **Files/modules:** `src/**`.
 **Acceptance criteria:** Structure matches `docs/ARCHITECTURE.md`; build still passes.
 **Required validation:** `npm run build`.
 
 ### T0.5 — Document real dev commands in CLAUDE.md
-**Status:** Not started
+**Status:** Complete
 **Objective:** Once `package.json` scripts exist (T0.1–T0.3), replace the placeholder command block in `CLAUDE.md` with the actual scripts.
 **Files/modules:** `CLAUDE.md`.
 **Acceptance criteria:** Commands listed in `CLAUDE.md` match `package.json` `scripts` exactly.

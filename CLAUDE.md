@@ -24,19 +24,16 @@ Planned capabilities (see `docs/TASKS.md` for the phased build order):
 
 ## Development Commands
 
-No `package.json` exists yet — Phase 0 (`docs/TASKS.md`) creates the Vite + React + TypeScript project.
-
-**This section must be updated with real commands as soon as `package.json` exists**, and kept in sync whenever scripts change. Expected commands once scaffolded:
+This section must be kept in sync whenever `package.json` scripts change.
 
 ```
-npm run dev        # local dev server
-npm run build       # production build
-npm run lint         # eslint
-npm run typecheck  # tsc --noEmit
-npm test              # unit tests (vitest)
+npm run dev         # local dev server
+npm run build       # tsc -b && vite build (production build)
+npm run preview     # preview the production build
+npm run lint        # eslint .
+npm run typecheck   # tsc -b --noEmit
+npm test            # vitest run (unit tests)
 ```
-
-Until `package.json` exists, "run validation" means: inspect the repository state and confirm no build tooling claims are made that aren't backed by an actual runnable command.
 
 ## Architecture Principles
 
