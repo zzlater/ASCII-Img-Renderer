@@ -43,6 +43,40 @@ Only after those four steps should any edit be made.
 
 ## Handoff Log
 
+### Handoff — 2026-08-13 (Phase 2 complete)
+
+**Task ID:** T2.1, T2.2, T2.3 — all Complete
+
+**What changed:**
+- Implemented image upload source (`src/sources/image-source.ts`), the render-owning hook (`src/hooks/useAsciiRenderer.ts`), default settings (`src/state/default-render-settings.ts`), layout components (`src/components/{Header,UploadPanel,SourcePreview,AsciiOutput}.tsx`, `src/styles/app.css`), and wired them into `src/App.tsx`. The app now renders ASCII output on screen from an uploaded image.
+- **Process note:** this code was found already written and uncommitted in the working tree at session start — implemented in a prior session outside the normal builder→reviewer→verifier pipeline, with `docs/TASKS.md`/`docs/PROJECT_STATE.md` never updated. This session ran it through the missing steps: reviewer pass → repair → verifier pass → docs → commit, same as if the builder step had just completed.
+- Reviewer found no Blockers, 4 Important findings. Repair builder fixed 2 with code changes (stale-async-response race on rapid re-upload via a request-generation counter in `App.tsx`; EXIF-orientation mismatch fixed via `imageOrientation: 'from-image'` in `image-source.ts`) and deleted a redundant `src/sources/.gitkeep`. The other 2 were documentation gaps, resolved by the orchestrator: recorded the deliberate `FrameSource`-interface omission as DEC-016, and performed + recorded the missing manual browser check.
+- Verifier re-ran lint/typecheck/test/build and independently confirmed both code fixes and the doc/code consistency.
+- Manual browser check performed via the `claude-in-chrome` browser-automation skill (no project-specific run skill existed yet, no `chromium-cli` available in this environment): started `npm run dev`, uploaded a generated test PNG, confirmed source preview + ASCII canvas output both rendered, header render-time readout populated (15.8ms), console clean on load and after upload.
+
+**Files modified:**
+- New: `src/sources/image-source.ts`, `src/hooks/useAsciiRenderer.ts`, `src/state/default-render-settings.ts`, `src/components/{Header,UploadPanel,SourcePreview,AsciiOutput}.tsx`, `src/styles/app.css`.
+- Modified: `src/App.tsx` (full wiring + stale-response guard), `src/index.css` (body background).
+- Deleted: `src/sources/.gitkeep`.
+- Docs: `docs/TASKS.md` (T2.1–T2.3 → Complete, notes added), `docs/DECISIONS.md` (DEC-016 added), `docs/PROJECT_STATE.md`, this file.
+
+**Important technical decisions:**
+- DEC-016: no `FrameSource` interface until a second input source exists (T4.1) — single-implementer interface would be an unrequested abstraction per `CLAUDE.md`.
+
+**Commands run and result:**
+- `npm run lint` — PASS. `npm run typecheck` — PASS. `npm test` — PASS (44/44). `npm run build` — PASS. All independently re-run and confirmed by both reviewer and verifier, before and after the repair round.
+- Manual browser check — PASS (see above).
+
+**Known issues / risks:**
+- `useAsciiRenderer`'s render-then-`setState` pattern is correct for Phase 2's static render but must not be copied into T4.2's rAF live-loop hook (per DEC-011) — that hook needs a fresh, ref-only implementation.
+- `fontSizePx` still has no non-finite-input guard at its `grid.ts` call site — still deferred to T3.2 (unchanged from Phase 1).
+- `getImageData` per-`render()` allocation — still deferred to Phase 4 profiling (unchanged from Phase 1).
+
+**Exact next task recommended:**
+- **T3.1–T3.5** (Phase 3: character ramp/font/brightness-contrast-gamma-invert/color-mode/output-width controls) — all wire already-implemented, already-tested `src/processing/*` utilities into new UI, no new processing logic expected.
+
+---
+
 ### Handoff — 2026-08-12 (Phase 1 complete)
 
 **Task ID:** T1.1, T1.2, T1.3, T1.4, T1.5 — all Complete

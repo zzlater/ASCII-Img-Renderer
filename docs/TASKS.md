@@ -95,25 +95,28 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 ## Phase 2 — Image Input and Static Rendering
 
 ### T2.1 — Image upload input source
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/sources/image-source.ts`: accept a file via `<input type="file">`, decode to `ImageBitmap`/`HTMLImageElement`, expose a minimal `FrameSource` interface.
 **Files/modules:** `src/sources/image-source.ts`, `src/sources/types.ts`.
 **Acceptance criteria:** Handles common formats (PNG/JPEG/WebP); releases any object URL created.
 **Required validation:** `npm run typecheck`, manual test with a sample image.
+**Notes:** Implemented as plain standalone functions (`loadImageSource`/`disposeImageSource`), not a `FrameSource` interface — deliberate deviation from `docs/ARCHITECTURE.md`'s proposed shape, recorded as DEC-016. Revisit at T4.1 once a second source exists to extract a real shared interface from. `createImageBitmap` called with `{ imageOrientation: 'from-image' }` so EXIF-rotated JPEGs match the `<img>` preview's orientation (repair, see review round below). Manual test: uploaded a generated PNG in Chrome via `claude-in-chrome` — decoded and rendered correctly, no console errors.
 
 ### T2.2 — Wire static image through renderer to canvas output
-**Status:** Not started
+**Status:** Complete
 **Objective:** Connect T2.1's source through the Canvas2D renderer (T1.5) to an on-screen `<canvas>`, one static render on image load.
 **Files/modules:** `src/hooks/` (new hook), `src/components/` (output canvas host).
 **Acceptance criteria:** Uploading an image renders ASCII output on screen at default settings.
 **Required validation:** `npm run build`, manual browser check.
+**Notes:** Manual browser check performed 2026-08-13: uploaded a test PNG, ASCII output rendered on canvas (colored glyphs matching source gradient), header render-time readout showed a real value (15.8ms) instead of the empty-state dash, no console errors on load or after upload.
 
 ### T2.3 — Basic layout: upload panel + output canvas
-**Status:** Not started
+**Status:** Complete
 **Objective:** Minimal `App.tsx` layout: upload control on one side, output canvas on the other. No styling polish required yet.
 **Files/modules:** `src/App.tsx`, `src/components/`.
 **Acceptance criteria:** Usable end-to-end path: pick image file → see ASCII output.
 **Required validation:** Manual browser check.
+**Notes:** `Header`/`UploadPanel`/`SourcePreview`/`AsciiOutput` split out as separate components; full pick-file → ASCII-output path confirmed working in the T2.2 manual browser check above.
 
 ---
 

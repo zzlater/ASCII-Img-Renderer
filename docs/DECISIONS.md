@@ -65,3 +65,7 @@ A ramp string is ordered dense/dark-glyph-first → sparse/light-glyph-last (e.g
 ### DEC-015 — Grid dimension formula
 **Status:** Accepted
 `rows = round(cols * cellAspectRatio / sourceAspectRatio)` where `cellAspectRatio = fontCellWidthPx / fontCellHeightPx` (measured from the actual font via Canvas `measureText`, not hardcoded) and `sourceAspectRatio = sourceWidth / sourceHeight`. Both `cols` and `rows` are clamped to a minimum of 1, and non-finite `outputWidthCols` (e.g. a cleared number input) falls back to `1` rather than propagating `NaN`. Implements DEC-010.
+
+### DEC-016 — No `FrameSource` interface until a second input source exists
+**Status:** Accepted
+`docs/ARCHITECTURE.md`'s proposed `sources/types.ts` (a shared `FrameSource` interface) was not implemented alongside T2.1's `image-source.ts`; `loadImageSource`/`disposeImageSource` are plain standalone functions instead. With only one input source implemented (image upload), an interface would have exactly one implementer — an unrequested abstraction under `CLAUDE.md`'s "no interface with a single implementation" rule. Revisit at T4.1 (video file input source), the first point a second source actually needs a shared shape; extract the interface then, once its real shape is informed by two concrete implementations instead of guessed in advance.
