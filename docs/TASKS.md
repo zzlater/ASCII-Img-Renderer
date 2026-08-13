@@ -51,39 +51,44 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 ## Phase 1 — Renderer Core and Pure Utilities
 
 ### T1.1 — Define the Renderer interface
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/renderer/types.ts` with the `Renderer`/`RenderSettings` shapes from `docs/ARCHITECTURE.md`.
 **Files/modules:** `src/renderer/types.ts`.
 **Acceptance criteria:** Interface compiles; documented with the fields needed for color/mono, char ramp, font metrics.
 **Required validation:** `npm run typecheck`.
+**Notes:** Final shape is `AsciiRenderer` with a single `render(source, target, settings)` method (no separate `configure`/`resize`) — see `docs/ARCHITECTURE.md` "Renderer Abstraction".
 
 ### T1.2 — Pure image-processing utilities: luminance and adjustments
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/processing/luminance.ts` and `src/processing/adjustments.ts` (brightness/contrast/gamma/invert) as pure functions on pixel data.
 **Files/modules:** `src/processing/luminance.ts`, `src/processing/adjustments.ts`, matching `*.test.ts`.
 **Acceptance criteria:** No DOM/Canvas/React imports in these files; documented input/output ranges.
 **Required validation:** `npm test`, `npm run typecheck`.
+**Notes:** Formulas and ranges locked in as DEC-012/DEC-013. `src/sum.ts`/`src/sum.test.ts` deleted, superseded by these real tests.
 
 ### T1.3 — Character ramp mapping utility
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/processing/char-ramp.ts`: luminance → character lookup, at least one built-in preset ramp, and support for a custom user-supplied ramp string.
 **Files/modules:** `src/processing/char-ramp.ts`, `*.test.ts`.
 **Acceptance criteria:** Pure function(s); handles empty/invalid custom ramp input without throwing.
 **Required validation:** `npm test`.
+**Notes:** All 5 product-facing presets implemented now (classic/blocks/minimal/binary/detailed), not deferred to Phase 3 — Phase 3's UI just references these constants. Ramp convention locked in as DEC-014.
 
 ### T1.4 — Grid/sampling math
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/renderer/grid.ts`: given output width, source aspect ratio, and font-cell aspect ratio, compute grid columns/rows (DEC-010).
 **Files/modules:** `src/renderer/grid.ts`, `*.test.ts`.
 **Acceptance criteria:** Pure function; covered by unit tests for at least landscape, portrait, and square source aspect ratios.
 **Required validation:** `npm test`.
+**Notes:** Formula locked in as DEC-015, including a non-finite-input guard added during repair (review found `NaN` `outputWidthCols` wasn't clamped).
 
 ### T1.5 — Canvas 2D renderer implementation
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/renderer/canvas2d-renderer.ts` implementing `Renderer` from T1.1, composing T1.2–T1.4 to sample a `CanvasImageSource` and draw characters to an output canvas.
 **Files/modules:** `src/renderer/canvas2d-renderer.ts`.
 **Acceptance criteria:** Implements the full `Renderer` interface; no direct DOM manipulation outside the target canvas passed in; disposes cleanly.
 **Required validation:** `npm run typecheck`, `npm test` (any testable sub-logic extracted to pure functions), manual smoke check once T2.x wires it to UI.
+**Notes:** Reuses an offscreen sampling canvas and cached font-cell metrics across calls (no rAF loop or FPS throttling here — that's T4.2's job). Review caught a real alpha-ghosting bug (offscreen canvas wasn't cleared before `drawImage`) — fixed in repair. DPI handled via `devicePixelRatio`-scaled backing store + CSS size. **Deferred manual smoke check to T2.x** (nothing renders to screen until Phase 2 wires this to UI).
 
 ---
 

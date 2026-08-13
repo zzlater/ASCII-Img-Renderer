@@ -49,3 +49,19 @@ The user sets output width (in characters); grid height is derived from source a
 ### DEC-011 — No React state updates inside the per-frame render loop
 **Status:** Accepted
 Per-frame draws for live sources run via `requestAnimationFrame` and refs. React `setState` in that path would cause re-renders at frame rate and blow the 30 FPS target (DEC-008). Diagnostics update on a throttled interval instead.
+
+### DEC-012 — Luminance uses Rec. 601 weighting
+**Status:** Accepted
+`(0.299*R + 0.587*G + 0.114*B) / 255`, implemented in `src/processing/luminance.ts`. A standard, well-known perceptual weighting; no reason to use a more expensive formula for v1.
+
+### DEC-013 — Fixed brightness/contrast/gamma/invert pipeline order and ranges
+**Status:** Accepted
+Applied in this exact order (`src/processing/adjustments.ts`): brightness (additive, range `[-1, 1]`) → contrast (CSS-`filter: contrast()`-like, `(v-0.5)*c+0.5`, range `[0, 2]`) → gamma (`v**(1/gamma)`, range `(0, ~3]`, non-positive gamma falls back to `1`, negative base floored to `0` before exponentiating to avoid `NaN`) → clamp to `[0,1]` → invert (`1-v`) → clamp to `[0,1]` again. Locked in because Phase 3's UI sliders must match these exact ranges — changing the ranges later is a breaking change to both the processing code and the controls.
+
+### DEC-014 — Character ramp convention: dense-glyph-first, index rises with luminance
+**Status:** Accepted
+A ramp string is ordered dense/dark-glyph-first → sparse/light-glyph-last (e.g. `classic = "@%#*+=-:. "`). `luminanceToChar` maps luminance directly to index (`floor(clamp01(luminance) * (ramp.length-1))`) — low luminance (dark source pixel) → low index → dense glyph. This is the traditional ASCII-art convention the built-in presets are written in; the user-facing "Invert" control flips it, rather than the ramp itself having an ambiguous direction.
+
+### DEC-015 — Grid dimension formula
+**Status:** Accepted
+`rows = round(cols * cellAspectRatio / sourceAspectRatio)` where `cellAspectRatio = fontCellWidthPx / fontCellHeightPx` (measured from the actual font via Canvas `measureText`, not hardcoded) and `sourceAspectRatio = sourceWidth / sourceHeight`. Both `cols` and `rows` are clamped to a minimum of 1, and non-finite `outputWidthCols` (e.g. a cleared number input) falls back to `1` rather than propagating `NaN`. Implements DEC-010.

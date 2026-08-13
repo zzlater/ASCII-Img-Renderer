@@ -49,17 +49,22 @@ The render loop (video/webcam/screen-share) runs via `requestAnimationFrame` dri
 
 ## Renderer Abstraction
 
-The rendering engine is accessed through a `Renderer` interface (proposed shape, finalized in Phase 1):
+The rendering engine is accessed through an `AsciiRenderer` interface (finalized in Phase 1, `src/renderer/types.ts`):
 
 ```ts
-interface Renderer {
-  configure(settings: RenderSettings): void;
-  renderFrame(source: CanvasImageSource, target: HTMLCanvasElement): void;
+interface AsciiRenderer {
+  // Renders `source` into `target`; internally resizes `target`'s backing
+  // store if the computed grid/DPR changed since the last call — no
+  // separate configure()/resize() step. Called once per frame (live
+  // sources) or on-demand (static images).
+  render(source: CanvasImageSource, target: HTMLCanvasElement, settings: RenderSettings): RenderMetrics;
   dispose(): void;
 }
 ```
 
-`canvas2d-renderer.ts` is the only v1 implementation. UI and hooks code depend on `Renderer`, never on `CanvasRenderingContext2D` directly, so a future `webgl-renderer.ts` / `webgpu-renderer.ts` can be swapped in behind the same interface without touching `components/`.
+`RenderSettings` carries the char ramp, color mode, monochrome/background colors, invert/brightness/contrast/gamma, font family/size/weight, and `outputWidthCols` (DEC-010). `RenderMetrics` returns the computed grid size and this call's wall-clock render time, for Phase 5's diagnostics.
+
+`canvas2d-renderer.ts` (`createCanvas2DRenderer()`) is the only v1 implementation. UI and hooks code depend on `AsciiRenderer`, never on `CanvasRenderingContext2D` directly, so a future `webgl-renderer.ts` / `webgpu-renderer.ts` can be swapped in behind the same interface without touching `components/`.
 
 ## Extension Points (not built in v1, but the abstraction must not block them)
 
