@@ -2,13 +2,11 @@ import { CHAR_RAMPS } from '../processing/char-ramp'
 import type { RenderSettings } from '../renderer/types'
 
 /**
- * Phase 2 static default. Nothing in the UI can change these yet — Phase 3
- * adds the controls panel (ramp picker, font picker, sliders, width input)
- * that read/write a real settings store; these field values are exactly
- * what those controls should default to, so behavior doesn't jump when
- * Phase 3 lands. A module-level constant (not a factory) is intentional:
- * useAsciiRenderer's effect depends on `settings` by reference, so a
- * stable object here avoids re-rendering on every App render.
+ * Initial value for App.tsx's `useState<RenderSettings>`, and the default
+ * every ControlsPanel control should reflect on first render. A module-level
+ * constant (not a factory) is intentional: `useState(DEFAULT_RENDER_SETTINGS)`
+ * only reads this reference once (on mount), so it doesn't need to be stable
+ * across renders the way a value passed on every render would.
  */
 export const DEFAULT_RENDER_SETTINGS: RenderSettings = {
   charRamp: CHAR_RAMPS.classic,

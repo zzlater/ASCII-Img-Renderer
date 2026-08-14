@@ -43,6 +43,42 @@ Only after those four steps should any edit be made.
 
 ## Handoff Log
 
+### Handoff — 2026-08-13 (Phase 3 complete)
+
+**Task ID:** T3.1, T3.2, T3.3, T3.4, T3.5 — all Complete
+
+**What changed:**
+- Bundled all five Phase 3 tasks into one builder pass (same rationale as Phase 0/1: tightly coupled — one settings state, one controls panel).
+- New `src/components/ControlsPanel.tsx`: char-ramp preset/custom-text control, font family/size control, brightness/contrast/gamma sliders + invert checkbox, color/monochrome toggle + conditional monochrome-color picker, output-width control.
+- `src/App.tsx`: settings are now a real `useState<RenderSettings>` (was the static `DEFAULT_RENDER_SETTINGS` constant) with a shallow-merge `handleSettingsChange` patch setter.
+- `src/renderer/canvas2d-renderer.ts`: added `safeFontSizePx` guard (falls back to 15px on non-finite/non-positive input) — closes the risk flagged in Phase 1/2's PROJECT_STATE.md as deferred to T3.2.
+- `src/renderer/grid.ts`: added `MAX_GRID_DIMENSION = 2000`, clamping both `cols` and `rows` in `computeGridDimensions` (repair round — see below).
+- Reviewer found no Blockers, 1 Important finding + 3 Nice-to-haves. Repair builder fixed the Important finding. Verifier re-confirmed. Orchestrator then performed the manual browser check (builder/reviewer both explicitly flagged they had no browser tool available in their sessions).
+
+**Files modified:**
+- New: `src/components/ControlsPanel.tsx`.
+- Modified: `src/App.tsx`, `src/state/default-render-settings.ts` (doc comment only), `src/renderer/canvas2d-renderer.ts`, `src/renderer/grid.ts`, `src/renderer/grid.test.ts`, `src/styles/app.css`.
+- Docs: `docs/TASKS.md` (T3.1–T3.5 → Complete, notes added), `docs/PROJECT_STATE.md`, this file.
+
+**Important technical decisions:**
+- No new DECISIONS.md entry needed — `MAX_GRID_DIMENSION` and `safeFontSizePx` are bug fixes within DEC-015's and T1.5's existing design, not new architectural decisions.
+- Settings state deliberately stayed as plain `useState` + props (App → ControlsPanel), not React Context or an external store — one settings owner, one consumer tree, so context would be an unrequested abstraction per CLAUDE.md.
+
+**Commands run and result:**
+- `npm run lint` — PASS. `npm run typecheck` — PASS. `npm test` — PASS (46/46, up from 44: two new `grid.test.ts` cases for the upper-bound clamp). `npm run build` — PASS. All independently re-run and confirmed by both reviewer and verifier, before and after the repair round.
+- Manual browser check — PASS. Performed via `claude-in-chrome`: every control exercised (ramp preset `blocks` + custom text `@#+. `, font Consolas @ 26px, brightness 0.50/contrast 1.60/gamma 2.20/invert checked, color→monochrome toggle with color picker, output width 10/60/120/999999). The extreme-width case specifically re-verified the `MAX_GRID_DIMENSION` fix holds in the live app (rendered in ~733ms, no crash, no console errors) rather than trusting the unit test alone. Note: individual screenshot captures intermittently hit a 30s CDP timeout immediately after a DOM-changing action, always succeeding on an immediate retry with no page-state impact — a `claude-in-chrome`/CDP quirk, not an app bug (confirmed via clean console reads and correct subsequent screenshots each time).
+
+**Known issues / risks:**
+- No `ErrorBoundary` anywhere in the app — the `MAX_GRID_DIMENSION` fix removes the one currently-known way to trigger an uncaught render-path exception, but there's no safety net if a future change reintroduces one. Worth considering before Phase 4.
+- No debounce on the new sliders/number inputs — fine for static images, worth watching once Phase 4's live rAF loop coexists with these same controls.
+- `getImageData` per-`render()` allocation — still deferred to Phase 4 profiling, now compounded by grids up to 2000×2000 being reachable.
+- `useAsciiRenderer`'s render-then-`setState` pattern must not be copied into T4.2's rAF loop hook (per DEC-011) — flagged again as a forward note.
+
+**Exact next task recommended:**
+- **T4.1 + T4.2 together** (video file input source + rAF-based live render loop) — first Phase 4 pair, tightly coupled. Recommend NOT bundling all of Phase 4 like Phase 3: T4.3 (webcam) and T4.4 (screen-share) are independent input sources with their own permission/error surfaces and deserve separate review rounds; T4.5 (FPS control) depends on T4.2 existing first.
+
+---
+
 ### Handoff — 2026-08-13 (Phase 2 complete)
 
 **Task ID:** T2.1, T2.2, T2.3 — all Complete

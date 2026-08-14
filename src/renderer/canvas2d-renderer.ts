@@ -28,8 +28,19 @@ function getSourceDimensions(source: CanvasImageSource): { width: number; height
   return { width: sized.width, height: sized.height }
 }
 
+// Mirrors grid.ts's non-finite outputWidthCols guard (DEC-015): a cleared
+// number-input control can feed NaN/Infinity into fontSizePx, which would
+// otherwise produce an invalid CSS font string (silently ignored by the
+// canvas context, leaving stale metrics) and a NaN cellHeightPx that
+// propagates into grid.ts's cellAspectRatio param and corrupts cols/rows.
+const DEFAULT_FONT_SIZE_PX = 15
+
+function safeFontSizePx(fontSizePx: number): number {
+  return Number.isFinite(fontSizePx) && fontSizePx > 0 ? fontSizePx : DEFAULT_FONT_SIZE_PX
+}
+
 function fontString(settings: Pick<RenderSettings, 'fontFamily' | 'fontSizePx' | 'fontWeight'>): string {
-  return `${settings.fontWeight} ${settings.fontSizePx}px ${settings.fontFamily}`
+  return `${settings.fontWeight} ${safeFontSizePx(settings.fontSizePx)}px ${settings.fontFamily}`
 }
 
 // Returning a non-nullable type here (instead of relying on a null-check
@@ -54,13 +65,14 @@ export function createCanvas2DRenderer(): AsciiRenderer {
   let cachedMetrics: CellMetrics | null = null
 
   function measureCell(settings: RenderSettings): CellMetrics {
-    const key = `${settings.fontFamily}__${settings.fontSizePx}__${settings.fontWeight}`
+    const fontSizePx = safeFontSizePx(settings.fontSizePx)
+    const key = `${settings.fontFamily}__${fontSizePx}__${settings.fontWeight}`
     if (cachedMetrics && cachedFontKey === key) {
       return cachedMetrics
     }
     sampleCtx.font = fontString(settings)
     const cellWidthPx = sampleCtx.measureText('M').width
-    const metrics: CellMetrics = { cellWidthPx, cellHeightPx: settings.fontSizePx * LINE_HEIGHT_FACTOR }
+    const metrics: CellMetrics = { cellWidthPx, cellHeightPx: fontSizePx * LINE_HEIGHT_FACTOR }
     cachedFontKey = key
     cachedMetrics = metrics
     return metrics

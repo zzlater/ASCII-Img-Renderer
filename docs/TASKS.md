@@ -123,39 +123,44 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 ## Phase 3 — Controls and Visual Customization
 
 ### T3.1 — Character preset / custom ramp control
-**Status:** Not started
+**Status:** Complete
 **Objective:** UI control to pick a built-in preset ramp or enter a custom ramp string, wired to T1.3 and settings state.
 **Files/modules:** `src/components/`, `src/state/`.
 **Acceptance criteria:** Changing the ramp updates rendered output; invalid custom input doesn't crash the app.
 **Required validation:** Manual browser check.
+**Notes:** Implemented in `src/components/ControlsPanel.tsx` — preset `<select>` over `CHAR_RAMPS` plus a custom-ramp text input sanitized via `sanitizeCustomRamp` before reaching `settings.charRamp`. The text input mirrors raw user input locally (not the sanitized value) so the field doesn't snap back to the classic preset while being cleared/retyped. Manual check: switched preset to `blocks`, typed a custom ramp (`@#+. `) — output visibly changed both times, preset `<select>` correctly flipped to "Custom" on manual entry, no console errors.
 
 ### T3.2 — Font control
-**Status:** Not started
+**Status:** Complete
 **Objective:** Font family/size control that updates the cell aspect ratio used by T1.4's grid math.
 **Files/modules:** `src/components/`, `src/state/`, `src/renderer/grid.ts` (consumer wiring only).
 **Acceptance criteria:** Changing font updates grid dimensions and visual output correctly (no distortion).
 **Required validation:** Manual browser check across at least 2 fonts.
+**Notes:** Font-family `<select>` (System Monospace/Consolas/Courier New/Menlo/Lucida Console — hardcoded cross-platform stacks, no web-font network dependency) and a font-size number input in `ControlsPanel.tsx`. Added `safeFontSizePx` guard in `canvas2d-renderer.ts` (falls back to 15px default on non-finite/non-positive input) since a real number input can now produce `NaN` — this was the risk `PROJECT_STATE.md` flagged as deferred from Phase 1. Manual check: switched System Monospace → Consolas and 15px → 26px — output re-rendered correctly at each step, grid size adjusted, no distortion, no console errors.
 
 ### T3.3 — Brightness / contrast / gamma / invert controls
-**Status:** Not started
+**Status:** Complete
 **Objective:** UI sliders/toggle wired to T1.2's pure adjustment functions via settings state.
 **Files/modules:** `src/components/`, `src/state/`.
 **Acceptance criteria:** Each control visibly affects output independently; values stay within documented valid ranges.
 **Required validation:** Manual browser check.
+**Notes:** Range inputs at DEC-013's exact ranges (brightness `[-1,1]`, contrast `[0,2]`, gamma `(0,~3]`) plus an invert checkbox, in `ControlsPanel.tsx`. Manual check: set brightness 0.50, contrast 1.60, gamma 2.20, checked invert — output visibly changed after each, no console errors.
 
 ### T3.4 — Color / monochrome mode toggle
-**Status:** Not started
+**Status:** Complete
 **Objective:** Toggle between color and monochrome rendering (DEC-006), wired into the renderer's `RenderSettings`.
 **Files/modules:** `src/components/`, `src/renderer/canvas2d-renderer.ts` (consumer of existing interface, no interface change if avoidable).
 **Acceptance criteria:** Both modes render correctly; switching doesn't require reloading the source.
 **Required validation:** Manual browser check.
+**Notes:** No `RenderSettings`/renderer interface changes needed — `colorMode`/`monochromeColor` already existed since T1.1. `ControlsPanel.tsx` conditionally shows a monochrome-color `<input type="color">` only when `colorMode === 'monochrome'`. Manual check: toggled to Monochrome — color picker appeared, output switched to grayscale glyphs immediately without re-uploading the source image, no console errors.
 
 ### T3.5 — Output width / grid size control
-**Status:** Not started
+**Status:** Complete
 **Objective:** UI control for output width (characters), driving T1.4's grid math (DEC-010).
 **Files/modules:** `src/components/`, `src/state/`.
 **Acceptance criteria:** Height always derives correctly from width + aspect ratios; no manual height input exposed.
 **Required validation:** Manual browser check at low/medium/high width values.
+**Notes:** Number input for `outputWidthCols`, no height input anywhere. Review caught a real Important bug here: the input's `min`/`max` HTML attributes don't block direct keyboard entry, so a hand-typed extreme value reached `computeGridDimensions` unclamped and could make `getImageData` allocate a pathological buffer — with no `ErrorBoundary` in the tree, this would crash the whole app to a blank page. Fixed at the root (`src/renderer/grid.ts`, not just the UI) by adding `MAX_GRID_DIMENSION = 2000`, clamping both `cols` and `rows`. Manual check confirmed the live fix, not just the unit tests: typed `10` (0.6ms render, correct small output), `60` (correct), and `999999` (clamped internally, rendered in 733ms — slow but no crash, no console errors) — the exact scenario the bug report described no longer breaks the app.
 
 ---
 

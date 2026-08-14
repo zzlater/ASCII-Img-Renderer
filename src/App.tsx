@@ -3,9 +3,11 @@ import { Header } from './components/Header'
 import { UploadPanel } from './components/UploadPanel'
 import { SourcePreview } from './components/SourcePreview'
 import { AsciiOutput } from './components/AsciiOutput'
+import { ControlsPanel } from './components/ControlsPanel'
 import { loadImageSource, disposeImageSource } from './sources/image-source'
 import { useAsciiRenderer } from './hooks/useAsciiRenderer'
 import { DEFAULT_RENDER_SETTINGS } from './state/default-render-settings'
+import type { RenderSettings } from './renderer/types'
 import './styles/app.css'
 
 function App() {
@@ -13,6 +15,7 @@ function App() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [settings, setSettings] = useState<RenderSettings>(DEFAULT_RENDER_SETTINGS)
   const requestIdRef = useRef(0)
 
   // Releases the previously-decoded bitmap the instant it's replaced by a
@@ -49,12 +52,17 @@ function App() {
     }
   }
 
-  const { canvasRef, metrics } = useAsciiRenderer(imageBitmap, DEFAULT_RENDER_SETTINGS)
+  function handleSettingsChange(patch: Partial<RenderSettings>) {
+    setSettings((prev) => ({ ...prev, ...patch }))
+  }
+
+  const { canvasRef, metrics } = useAsciiRenderer(imageBitmap, settings)
 
   return (
     <div className="app-shell">
       <Header renderTimeMs={metrics?.renderTimeMs ?? null} />
       <UploadPanel onFileSelected={handleFileSelected} fileName={fileName} error={error} />
+      <ControlsPanel settings={settings} onChange={handleSettingsChange} />
       <main className="preview-grid">
         <SourcePreview previewUrl={previewUrl} />
         <AsciiOutput canvasRef={canvasRef} hasSource={imageBitmap !== null} />

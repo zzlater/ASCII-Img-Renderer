@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { computeGridDimensions } from './grid'
+import { computeGridDimensions, MAX_GRID_DIMENSION } from './grid'
 
 describe('computeGridDimensions', () => {
   test('square source, square cells -> square-ish grid (sanity check)', () => {
@@ -40,5 +40,18 @@ describe('computeGridDimensions', () => {
   test('non-finite outputWidthCols (e.g. a cleared number input) falls back to 1 instead of NaN', () => {
     expect(computeGridDimensions(NaN, 1, 1).cols).toBe(1)
     expect(computeGridDimensions(Infinity, 1, 1).cols).toBe(1)
+  })
+
+  test('cols are clamped to MAX_GRID_DIMENSION for an extreme hand-typed outputWidthCols', () => {
+    const result = computeGridDimensions(999999, 1, 1)
+    expect(result.cols).toBe(MAX_GRID_DIMENSION)
+    expect(result.rows).toBe(MAX_GRID_DIMENSION)
+  })
+
+  test('rows are clamped to MAX_GRID_DIMENSION for an extreme aspect-ratio combination', () => {
+    // A very tall, narrow source (sourceAspectRatio near 0) with a wide cell
+    // aspect ratio drives the derived rows far above any usable grid size.
+    const result = computeGridDimensions(100, 0.0001, 5)
+    expect(result.rows).toBe(MAX_GRID_DIMENSION)
   })
 })
