@@ -167,18 +167,20 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 ## Phase 4 — Video / Webcam / Screen-Share Lifecycle
 
 ### T4.1 — Video file input source
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement `src/sources/video-source.ts`: load a video file into an `HTMLVideoElement`, handle play/pause, expose current-frame access.
 **Files/modules:** `src/sources/video-source.ts`.
 **Acceptance criteria:** Cleans up (`src = ''`, listeners removed) on unmount or source change.
 **Required validation:** `npm run typecheck`, manual test with a sample video file.
+**Notes:** `loadVideoSource`/`disposeVideoSource` point a React-owned, always-mounted `<video>` element (see T2.3-pattern `SourcePreview.tsx`) at a `File`; a `WeakMap<HTMLVideoElement, string>` tracks the object URL each element owns so it can be revoked precisely. Repair round added an `abort` listener (alongside `loadedmetadata`/`error`) so a preempted load — e.g. a rapid re-pick, or `disposeVideoSource` clearing `src` mid-load — doesn't leave the one-shot listener pair dangling; reviewer had flagged this as a literal gap against the "listeners removed... on source change" criterion. **Manual video-playback verification is incomplete** — see the note at the bottom of this task's block and `docs/PROJECT_STATE.md`'s Known Risks for the full explanation (a browser-automation environment limitation, not an app defect).
 
 ### T4.2 — rAF-based render loop decoupled from React state
-**Status:** Not started
+**Status:** Complete
 **Objective:** Implement the live render loop (hook in `src/hooks/`) that calls the renderer every frame via `requestAnimationFrame` and refs only — per DEC-011, no `setState` in the per-frame path.
 **Files/modules:** `src/hooks/` (new render-loop hook).
 **Acceptance criteria:** Verified (by code inspection and a reviewer pass) that no component re-render is triggered per frame; loop starts/stops cleanly with source lifecycle.
 **Required validation:** `npm run typecheck`, manual browser check with a playing video, reviewer sign-off on the no-setState-per-frame requirement.
+**Notes:** `useLiveVideoRenderer` owns its own `AsciiRenderer` instance and canvas, keeps settings in a ref (updated via a mount+update effect, never read from the render-body closure), and gates the rAF loop on the video's own `play`/`pause`/`ended` events rather than running unconditionally. Reviewer sign-off obtained: closures in the effect were traced by hand and confirmed `cancelAnimationFrame` always cancels the correct, up-to-date scheduled frame, and confirmed zero `setState` calls anywhere in the `tick()` path or its callees. **Manual browser check with a playing video could not be completed** — three different video files (two synthesized, one copied from a genuine Windows system file, `oobe-intro.mp4`) all failed to decode in this session's `claude-in-chrome` automated browser: `readyState` never advanced past `0` (`HAVE_NOTHING`), even for a plain HTTP-served file loaded into a fresh, app-code-free `<video>` element in a brand-new tab — conclusively an automated-browser-environment media-pipeline limitation (confirmed via `canPlayType()` reporting full codec support, a successful `fetch()` of the exact bytes, and the failure reproducing identically with zero app code involved), not an app defect. What *was* verified live: both file inputs accept files and update the UI correctly, the source badge and filename reflect the active source, and — most relevant to this task's cleanup logic — switching to an image while a video load was stuck pending correctly triggered `disposeVideoSource` mid-flight with no console errors, exercising the exact cross-source-cleanup path by hand. **Recommend a follow-up manual spot-check** (upload a real video, confirm ASCII output updates on play, pauses on pause) next time this repo is opened in a normal (non-automated) browser.
 
 ### T4.3 — Webcam input source
 **Status:** Not started

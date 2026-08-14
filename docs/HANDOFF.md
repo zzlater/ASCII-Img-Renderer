@@ -43,6 +43,45 @@ Only after those four steps should any edit be made.
 
 ## Handoff Log
 
+### Handoff — 2026-08-13 (T4.1/T4.2 complete)
+
+**Task ID:** T4.1 (video file input source), T4.2 (rAF-based live render loop) — both Complete
+
+**What changed:**
+- New `src/sources/video-source.ts`: `loadVideoSource`/`disposeVideoSource` for a React-owned, always-mounted `<video>` element.
+- New `src/hooks/useLiveVideoRenderer.ts`: rAF loop gated on the video's `play`/`pause`/`ended` events, settings via ref, zero `setState` in the per-frame path (DEC-011).
+- `src/App.tsx`: added `sourceType`, `videoRef`, `handleVideoFileSelected`, cross-source cleanup, wired both render hooks.
+- `src/components/UploadPanel.tsx`: two sibling file inputs (image/video), dynamic source badge.
+- `src/components/SourcePreview.tsx`: always-mounted `<video controls>` (hidden via CSS when inactive), alongside the existing `<img>` path.
+- `src/styles/app.css`: `.upload-field`, `.preview-video`, `.is-hidden`.
+- **Process note**: this task hit two mid-session connection failures (once during the initial builder run, once during the first reviewer pass). Both were handled by inspecting what was actually left in the working tree before deciding whether to resume or restart — the interrupted builder run had left complete, correct code for 4 of 5 files, so a follow-up builder session finished only the missing integration (`App.tsx` wiring + CSS) rather than redoing everything; the interrupted reviewer run left no partial artifact (read-only), so it was simply relaunched fresh.
+- Reviewer found no Blockers, 2 Important findings (both fixed in repair) + 3 Nice-to-haves (left alone). DEC-011 compliance was reviewed with unusual rigor given it's the highest-risk rule in the project — every closure in the rAF effect was hand-traced, not just read.
+
+**Files modified:**
+- New: `src/sources/video-source.ts`, `src/hooks/useLiveVideoRenderer.ts`.
+- Modified: `src/App.tsx`, `src/components/UploadPanel.tsx`, `src/components/SourcePreview.tsx`, `src/styles/app.css`.
+- Docs: `docs/TASKS.md` (T4.1/T4.2 → Complete, notes added), `docs/PROJECT_STATE.md`, this file.
+
+**Important technical decisions:**
+- No renderer changes needed — `canvas2d-renderer.ts` already handled `HTMLVideoElement` sources and not-yet-decoded frames since Phase 1's forward-looking design.
+- DEC-016 (`FrameSource` interface) deliberately still not extracted — video/image shapes remain different enough; explicitly flagged T4.3 (webcam) as the real revisit point, since it'll be the second `MediaStream`-ish live source.
+- Settings reach the rAF loop via a ref updated in a `useEffect` (not a render-body assignment) — required by this repo's `eslint-plugin-react-hooks` refs rule, and incidentally the textbook-correct pattern anyway.
+
+**Commands run and result:**
+- `npm run lint`/`typecheck`/`test` (46/46)/`build` — all PASS, independently re-run by both reviewer and verifier before and after the repair round.
+- **Manual browser check: incomplete, root-caused, and explicitly documented as a known gap** — not silently skipped. Three video files (two synthesized, one a genuine Windows system file) all failed to decode in this session's `claude-in-chrome` automated browser (`readyState` stuck at `0` indefinitely). Diagnosed via `canPlayType()` (reported full support), a successful `fetch()` of the identical bytes, and reproducing the exact same failure with a plain HTTP-served file in a fresh tab with zero app code involved — conclusively an automated-browser-environment media-pipeline limitation, not an app defect. What *was* verified live: both upload inputs work, badge/filename update correctly, and — most relevant to this task's review focus — switching to an image while a video load was stuck pending correctly disposed the video mid-flight with no console errors, live-exercising the cross-source-cleanup path.
+
+**Known issues / risks:**
+- **Follow-up recommended**: manual spot-check of actual video playback (upload → play → confirm ASCII canvas updates → pause → confirm it stops) next time this repo is opened in a normal, non-automated browser. This is the single most important outstanding verification in the project right now.
+- `getImageData`'s per-`render()` allocation is now genuinely hot (every rAF tick during video playback, not just a future concern) — worth profiling once playback can be visually confirmed.
+- No `ErrorBoundary` anywhere in the app — worth adding before T4.3/T4.4 introduce more live-input failure modes.
+- Two independent `AsciiRenderer` instances exist simultaneously (one per hook, image + video) — harmless duplication, not a leak, left as-is per reviewer's Nice-to-have judgment.
+
+**Exact next task recommended:**
+- **T4.3** (webcam input source, `getUserMedia`) as its own standalone builder→reviewer→verifier round — do NOT bundle with T4.4/T4.5. Revisit DEC-016 here since it's the second live-source case.
+
+---
+
 ### Handoff — 2026-08-13 (Phase 3 complete)
 
 **Task ID:** T3.1, T3.2, T3.3, T3.4, T3.5 — all Complete

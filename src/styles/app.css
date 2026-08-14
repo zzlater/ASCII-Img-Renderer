@@ -64,6 +64,12 @@
   padding: 1rem;
 }
 
+.upload-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .source-badge {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -160,6 +166,16 @@
   max-width: 100%;
   max-height: 480px;
   object-fit: contain;
+}
+
+.preview-video {
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+}
+
+.is-hidden {
+  display: none;
 }
 
 .ascii-canvas {
