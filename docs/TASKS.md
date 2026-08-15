@@ -162,6 +162,8 @@ Only the orchestrator may set a task to `Complete` (see `CLAUDE.md`). Builders s
 **Required validation:** Manual browser check at low/medium/high width values.
 **Notes:** Number input for `outputWidthCols`, no height input anywhere. Review caught a real Important bug here: the input's `min`/`max` HTML attributes don't block direct keyboard entry, so a hand-typed extreme value reached `computeGridDimensions` unclamped and could make `getImageData` allocate a pathological buffer — with no `ErrorBoundary` in the tree, this would crash the whole app to a blank page. Fixed at the root (`src/renderer/grid.ts`, not just the UI) by adding `MAX_GRID_DIMENSION = 2000`, clamping both `cols` and `rows`. Manual check confirmed the live fix, not just the unit tests: typed `10` (0.6ms render, correct small output), `60` (correct), and `999999` (clamped internally, rendered in 733ms — slow but no crash, no console errors) — the exact scenario the bug report described no longer breaks the app.
 
+**2026-08-14 follow-up (out-of-band, no builder/reviewer round):** UI slider/number-input `max` was still `400`, well below the already-tested-and-clamped `MAX_GRID_DIMENSION = 2000` ceiling, so users couldn't reach resolutions the backend already supported safely. Raised `ControlsPanel.tsx`'s `max` from `400` to `2000` to match. One-line change, no new logic — `grid.ts`'s existing clamp and T3.5's `999999` manual test already cover this range. Not re-validated with a fresh manual browser check; low risk given the ceiling was already exercised.
+
 ---
 
 ## Phase 4 — Video / Webcam / Screen-Share Lifecycle

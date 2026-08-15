@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-08-13 by orchestrator (T4.1/T4.2 complete)._
+_Last updated: 2026-08-14 by orchestrator (out-of-band: output-width UI max raised to 2000)._
 
 ## Current Status
 
@@ -26,6 +26,8 @@ Phase 0 through Phase 3 complete, plus the first pair of Phase 4 tasks (T4.1 vid
 ## Current Active Task
 
 No task in progress. Next up is **T4.3** (webcam input source via `getUserMedia`) — per the sequencing plan below, NOT bundled with T4.4/T4.5.
+
+**2026-08-14 out-of-band change** (not a TASKS.md item, no builder/reviewer round — one-line UI fix): `ControlsPanel.tsx`'s output-width number input had `max={400}`, well below `grid.ts`'s already-tested `MAX_GRID_DIMENSION = 2000` ceiling. Raised to `max={2000}` so users can actually reach the resolution the backend already safely supports. No logic changed; T3.5's existing manual test (`999999` typed in, clamped, 733ms, no crash) already covers this range. Not re-validated with a fresh manual browser check.
 
 ## Latest Validation
 

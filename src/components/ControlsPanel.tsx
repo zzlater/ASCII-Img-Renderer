@@ -203,7 +203,7 @@ export function ControlsPanel({ settings, onChange }: ControlsPanelProps) {
           id="output-width"
           type="number"
           min={10}
-          max={400}
+          max={2000}
           step={1}
           value={settings.outputWidthCols}
           onChange={(event) => onChange({ outputWidthCols: event.target.valueAsNumber })}
